@@ -1,2 +1,4 @@
 venv
-habits.json
+__pycache__
+data
+
