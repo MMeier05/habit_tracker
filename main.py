@@ -20,24 +20,16 @@ def main():
     parser.add_argument('--edit', help="edit habit", action="store_true")
     args = parser.parse_args()
 
-    today = date.today()
-    user_streak = streak.get_streak() 
-    render_obj = f"$ {today}\nstreak: {user_streak}\ncommands:\n--add: Add a habit\n--delete: Delete a habit\n--today: Show todays to-do's\n--all: Show all habits\n--edit: Edit existing habit"
-    title = "[green]dashboard"
-    render_obj = Text(render_obj)
-
     if args.today:
-        # TODO: Show streak
-        # TODO: Show the dashboard and prompt user with either ability to complete task or quit
+        user_streak = streak.get_streak()
         due_today = show_todo()
         today = date.today()
         title = "[green]today"
         if not due_today:
-            due_today = "No habits due today!"
-            render_obj = f"$ {today}\nstreak: {user_streak}"
+            render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\nNo habits due today!"
             render_obj = Text(render_obj)
         else:
-            render_obj = f"$ {today}\nstreak: {user_streak}\nTo do:\n{pretty_print_habits(due_today)}"
+            render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\nTo do:\n{pretty_print_habits(due_today)}"
             render_obj = Text(render_obj)
             render_obj.stylize("green")
             print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
@@ -48,8 +40,6 @@ def main():
                     data = d[user_completed]
                     data.complete_habit()
                     d[user_completed] = data
-
-
     elif args.add:
         h_name = Prompt.ask("[green]Give your habit a name")
         h_freq = IntPrompt.ask(f"[green]How often should your habit <{h_name}> get scheduled? (every _ day(s))")
@@ -72,6 +62,7 @@ def main():
         new_habit = habit.Habit(h_name, h_tag, h_freq)
         to_file(new_habit)
     elif args.all:
+        # TODO: Show next due date for every habit
         habits = retrieve_all()
         render_obj = f"{pretty_print_habits(habits)}"
         title = "[green]all habits"
@@ -117,8 +108,11 @@ def main():
                 d.close()
                 print(f"[green]Tag updated!")
     else:
-        pass
-
+        today = date.today()
+        user_streak = streak.get_streak() 
+        render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\ncommands:\n--add: Add a habit\n--delete: Delete a habit\n--today: Show todays to-do's\n--all: Show all habits\n--edit: Edit existing habit"
+        title = "[green]dashboard"
+        render_obj = Text(render_obj)
     render_obj.stylize("green")
     print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
 
@@ -128,7 +122,8 @@ def pretty_print_habits(habits: list) -> str:
     habits_str = ""
     for h in habits:
         if h.tag not in tag_dict:
-            tag_dict[h.tag] = [h.name]
+            date = h.last_completed + h.frequency
+            tag_dict[h.tag] = [f"{h.name} | @due on: {date.strftime('%a, %d.%b')} "]
         else:
             tag_dict[h.tag].append(h.name)
     for key in tag_dict.keys():

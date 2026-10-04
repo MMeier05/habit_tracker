@@ -3,7 +3,7 @@ import datetime as dt
 import streak
 
 class Habit:
-    def __init__(self, name, tag=None, frequency=1):
+    def __init__(self, name, frequency, tag=None):
         self.name: str = name
         self.tag: str = tag
         self.frequency: timedelta = dt.timedelta(frequency)
@@ -21,7 +21,7 @@ last_completed: {self.last_completed})"""
 
     def is_due(self) -> bool:
         cur_time = dt.date.today()
-        return True if  (cur_time - self.last_completed) >= self.frequency else False
+        return True if (self.last_completed + self.frequency) <= dt.date.today() else False
 
     def complete_habit(self):
         if not self.is_due():
@@ -32,6 +32,5 @@ last_completed: {self.last_completed})"""
 
     def set_frequency(self, new_freq):
         self.frequency = dt.timedelta(new_freq)
-
 
 
