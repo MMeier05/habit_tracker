@@ -20,6 +20,13 @@ def main():
     parser.add_argument('--edit', help="edit habit", action="store_true")
     args = parser.parse_args()
 
+    today = date.today()
+    user_streak = streak.get_streak() 
+    render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\ncommands:\n--add: Add a habit\n--delete: Delete a habit\n--today: Show todays to-do's\n--all: Show all habits\n--edit: Edit existing habit"
+    title = "[green]dashboard"
+    render_obj = Text(render_obj)
+    render_obj.stylize("green")
+
     if args.today:
         user_streak = streak.get_streak()
         due_today = show_todo()
@@ -59,7 +66,7 @@ def main():
         if confirmation == False:
             print("[green]Habit discarded")
             return
-        new_habit = habit.Habit(h_name, h_tag, h_freq)
+        new_habit = habit.Habit(h_name, h_freq, h_tag)
         to_file(new_habit)
     elif args.all:
         # TODO: Show next due date for every habit
@@ -107,13 +114,8 @@ def main():
                 d[name_habit_to_edit] = data
                 d.close()
                 print(f"[green]Tag updated!")
-    else:
-        today = date.today()
-        user_streak = streak.get_streak() 
-        render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\ncommands:\n--add: Add a habit\n--delete: Delete a habit\n--today: Show todays to-do's\n--all: Show all habits\n--edit: Edit existing habit"
-        title = "[green]dashboard"
-        render_obj = Text(render_obj)
-    render_obj.stylize("green")
+    else: 
+        pass
     print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
 
 
