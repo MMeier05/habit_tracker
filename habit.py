@@ -1,15 +1,15 @@
 import time
+import shelve
 import datetime as dt
 import streak
 
 class Habit:
-    def __init__(self, name, frequency, tag=None):
+    def __init__(self, name, frequency):
         self.name: str = name
-        self.tag: str = tag
         self.frequency: timedelta = dt.timedelta(frequency)
         self.created: datetime = dt.date.today()
         self.last_completed: datetime = dt.date(1, 1, 1)
-        
+
 
     def __repr__(self) -> str:
         return f"""
@@ -29,14 +29,24 @@ last_completed: {self.last_completed})"""
 
         return True if (self.last_completed + self.frequency) <= cur_time else False
 
-    def complete_habit(self):
+    def complete(self):
         if not self.is_due():
             raise Exception("Habit not overdue")
         else:
             self.last_completed = dt.date.today()
-            streak.increment()
 
     def set_frequency(self, new_freq):
         self.frequency = dt.timedelta(new_freq)
+
+def retrieve_all() -> list[Habit]:
+    d = shelve.open("data")
+    data_list = [d[key] for key in list(d.keys())]
+    d.close()
+    return data_list
+
+def show_todo() -> list[tuple[bool, Habit]]:
+    habits = retrieve_all()
+    to_do = [elem for elem in habits if elem.is_due() or elem.last_completed == dt.date.today()]
+    return to_do
 
 

@@ -119,57 +119,5 @@ def main():
     print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
 
 
-def pretty_print_habits(habits: list) -> str:
-    tag_dict = {}
-    habits_str = ""
-    for h in habits:
-        if h.tag not in tag_dict:
-            date = h.last_completed + h.frequency
-            tag_dict[h.tag] = [f"{h.name} | @due on: {date.strftime('%a, %d.%b')} "]
-        else:
-            tag_dict[h.tag].append(h.name)
-    for key in tag_dict.keys():
-        habits_str += "$" + key + ":\n"
-        for value in tag_dict[key]:
-            habits_str += " >" + value + "\n"
-    return habits_str
-
-def remove(habit: str) -> bool:
-    d = shelve.open("data")
-    if habit in d:
-        del d[habit]
-        d.close()
-        return True
-    d.close()
-    return False
-
-def rename(habit: str, new_name: str) -> Habit | None:
-    d = shelve.open("data")
-    if habit in d:
-        data = d[habit]
-        del d[habit]
-    else:
-        return None
-    data.name = new_name
-    d[new_name] = data
-    d.close()
-    return data
-
-def retrieve_all() -> list[Habit]:
-    d = shelve.open("data")
-    data_list = [d[key] for key in list(d.keys())]
-    d.close()
-    return data_list
-
-def to_file(habit: Habit):
-    d = shelve.open("data")
-    d[habit.name] = habit
-    d.close()
-
-def show_todo() -> list[Habit]:
-    habits = retrieve_all()
-    to_do = [elem for elem in habits if elem.is_due()]
-    return to_do
-
 if __name__ == "__main__":
     main()
