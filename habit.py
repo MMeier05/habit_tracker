@@ -38,6 +38,33 @@ last_completed: {self.last_completed})"""
     def set_frequency(self, new_freq):
         self.frequency = dt.timedelta(new_freq)
 
+
+def remove(habit: str) -> bool:
+    d = shelve.open("data")
+    if habit in d:
+        del d[habit]
+        d.close()
+        return True
+    d.close()
+    return False
+
+def rename(habit: str, new_name: str) -> Habit | None:
+    d = shelve.open("data")
+    if habit in d:
+        data = d[habit]
+        del d[habit]
+    else:
+        return None
+    data.name = new_name
+    d[new_name] = data
+    d.close()
+    return data
+
+def to_file(habit: Habit):
+    d = shelve.open("data")
+    d[habit.name] = habit
+    d.close()
+
 def retrieve_all() -> list[Habit]:
     d = shelve.open("data")
     data_list = [d[key] for key in list(d.keys())]
@@ -48,5 +75,3 @@ def show_todo() -> list[tuple[bool, Habit]]:
     habits = retrieve_all()
     to_do = [elem for elem in habits if elem.is_due() or elem.last_completed == dt.date.today()]
     return to_do
-
-
