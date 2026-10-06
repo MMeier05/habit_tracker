@@ -8,7 +8,7 @@ class Habit:
         self.tag: str = tag
         self.frequency: timedelta = dt.timedelta(frequency)
         self.created: datetime = dt.date.today()
-        self.last_completed: datetime = self.created
+        self.last_completed: datetime = dt.date(1, 1, 1)
         
 
     def __repr__(self) -> str:
@@ -19,9 +19,15 @@ tag: {self.tag},
 created: {self.created},
 last_completed: {self.last_completed})"""
 
-    def is_due(self) -> bool:
-        cur_time = dt.date.today()
-        return True if (self.last_completed + self.frequency) <= dt.date.today() else False
+    def is_due(self, date="today") -> bool:
+        if date == "today":
+            cur_time = dt.date.today()
+        elif isinstance(date, dt.date):
+            cur_time = date
+        else:
+            raise Exception("Date must either be 'today' or valid datetime.date format")
+
+        return True if (self.last_completed + self.frequency) <= cur_time else False
 
     def complete_habit(self):
         if not self.is_due():
