@@ -1,123 +1,88 @@
-import shelve
-import os
-import habit
-import streak
-import argparse
-from datetime import date
-from rich import print
-from rich.panel import Panel
 from rich.console import Console
-from rich.text import Text
-from rich.prompt import Prompt, IntPrompt, Confirm
+from rich import print
+import typer
+import datetime as dt
+from ui import Dashboard, Calendar
+import habit as h
+import streak as s
+from typing import Annotated
 
+app = typer.Typer()
+console = Console()
+h_list = h.show_todo()
+s.check_for_reset()
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--today', help="show todays tasks", action="store_true")
-    parser.add_argument('--add', help="add to-do", action="store_true")
-    parser.add_argument('--all', help="show all habits", action="store_true")
-    parser.add_argument('--delete', help="delete a habit", action="store_true")
-    parser.add_argument('--edit', help="edit habit", action="store_true")
-    args = parser.parse_args()
+def interval_callback(value: int):
+    if value and value <= 0:
+        raise typer.BadParameter("The interval must be bigger than 0 days.")
+    return value
 
-    today = date.today()
-    user_streak = streak.get_streak() 
-    render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\ncommands:\n--add: Add a habit\n--delete: Delete a habit\n--today: Show todays to-do's\n--all: Show all habits\n--edit: Edit existing habit"
-    title = "[green]dashboard"
-    render_obj = Text(render_obj)
-    render_obj.stylize("green")
+@app.command()
+def cal(size: Annotated[int, typer.Option(help="Size of the printed calendar.")] = 4) :
+    console.print(Calendar(h_list, size))
 
-    if args.today:
-        user_streak = streak.get_streak()
-        due_today = show_todo()
-        today = date.today()
-        title = "[green]today"
-        if not due_today:
-            render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\nNo habits due today!"
-            render_obj = Text(render_obj)
-        else:
-            render_obj = f"$ {today.strftime('%a, %d.%b')}\nstreak: {user_streak}\nTo do:\n{pretty_print_habits(due_today)}"
-            render_obj = Text(render_obj)
-            render_obj.stylize("green")
-            print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
-            choice = Confirm.ask(f"[green]Complete a habit?")
-            if choice:
-                user_completed = Prompt.ask(f"[green]Complete", choices=[elem.name for elem in due_today])
-                with shelve.open("data") as d:
-                    data = d[user_completed]
-                    data.complete_habit()
-                    d[user_completed] = data
-    elif args.add:
-        h_name = Prompt.ask("[green]Give your habit a name")
-        h_freq = IntPrompt.ask(f"[green]How often should your habit <{h_name}> get scheduled? (every _ day(s))")
-        habits = retrieve_all()
-        tags = [h.tag for h in habits]
-        if tags:
-            choice = Prompt.ask(f"[green]Add a Tag to group it with other habits or choose from existing tags (Available tags: {tags}",
-                            choices=["new", "existing"],
-            )
-        else:
-            choice ="new"
-        if choice == "new":
-            h_tag = Prompt.ask(f"[green]Add a tag")
-        elif choice == "existing":
-            h_tag = Prompt.ask(f"[green]Coose a tag", choices=tags)
-        confirmation = Confirm.ask(f"[green]Save habit <{h_name}>?")
-        if confirmation == False:
-            print("[green]Habit discarded")
-            return
-        new_habit = habit.Habit(h_name, h_freq, h_tag)
-        to_file(new_habit)
-    elif args.all:
-        # TODO: Show next due date for every habit
-        habits = retrieve_all()
-        render_obj = f"{pretty_print_habits(habits)}"
-        title = "[green]all habits"
-        render_obj = Text(render_obj)
-    elif args.delete:
-        habits = retrieve_all()
-        if not habits:
-            print(f"[green]No habits available")
-        else:
-            names = [habit.name for habit in habits]
-            h_name = Prompt.ask(f"[green]Enter the name of the habit you want to delete", choices=names)
-            if remove(h_name):
-                print(f"[green]Successfully removed <{h_name}>")
-            else:
-                print(f"[green]Error removing <{h_name}>")
-    elif args.edit:
-        habits = retrieve_all()
-        if not habits:
-            print(f"[green]No habits available")
-            return
-        habit_names = [habit.name for habit in habits]
-        name_habit_to_edit = Prompt.ask(f"[green]Choose the habit you want to edit", choices=habit_names)
-        field_to_edit = Prompt.ask(f"[green]What do you want to edit", choices=["name", "frequency", "tag"])
-        match field_to_edit:
-            case "name":
-                new_name = Prompt.ask(f"[green]Enter the new name")
-                rename(name_habit_to_edit, new_name)
-                print(f"[green]Habit renamed to {new_name}")
-            case "frequency":
-                new_freq = IntPrompt.ask(f"[green]Enter the new frequency (every _ day(s)")
-                d = shelve.open("data")
-                data = d[name_habit_to_edit]
-                data.set_frequency(new_freq) 
-                d[name_habit_to_edit] = data
-                d.close()
-                print(f"[green]Frequency updated!")
-            case "tag":
-                new_tag = Prompt.ask(f"[green]Enter a new tag")
-                d = shelve.open("data")
-                data = d[name_habit_to_edit]
-                data.tag = new_tag
-                d[name_habit_to_edit] = data
-                d.close()
-                print(f"[green]Tag updated!")
-    else: 
-        pass
-    print(Panel(render_obj, title_align='left', title=title, expand=False, style="green"))
+@app.callback(invoke_without_command=True)
+@app.command()
+def dash(ctx: typer.Context):
+    if ctx.invoked_subcommand is None:
+        console.print(Dashboard(h_list))
+
+@app.command()
+def add(
+    name: Annotated[str, typer.Argument(help="The name of your habit.")],
+    interval: Annotated[int, typer.Argument(
+        help="The interval your habit gets scheduled.",
+        callback=interval_callback,
+    )] = 1
+):
+    """
+    Add new habits
+    """
+
+    h.to_file(h.Habit(name, interval))
+    i_string = f"{interval} days" if interval > 1 else f"day"
+    console.print(f"[green bold][magenta]{name}[/magenta] was added and gets scheduled every {i_string}!")
+
+@app.command()
+def rm(name: Annotated[str, typer.Argument(help="Name of the to be deleted habit.")]):
+    """
+    Delete habits
+    """
+    if h.remove(name):
+        console.print(f"[green][italic]Success[/italic]\n[magenta]{name}[/magenta] was removed!")
+    else:
+        raise typer.BadParameter(f"{name} does not exist!")
+
+@app.command()
+def edit(
+    habit_name: Annotated[str, typer.Argument(help="The name of the to be edited habit.")],
+    name: Annotated[str, typer.Option(help="Edit the name.")] = None,
+    sched: Annotated[int, typer.Option(
+        help="Edit the habits schedule.",
+        callback=interval_callback,
+    )] = None,
+):
+    console.print(f"[green][italic]Success[/italic]")
+    if name:
+        if not h.edit_name(habit_name, name):
+            raise typer.BadParameter(f"{habit_name} does not exist!")
+        console.print(f"[magenta]{habit_name} [green]-> [magenta]{name}")
+        habit_name = name
+    if sched:
+        if not h.edit_schedule(habit_name, sched):
+            raise typer.BadParameter(f"{habit_name} does not exist!")
+        i_string = f"[magenta]{sched} [green]days" if sched > 1 else f"[green]day"
+        console.print(f"[green]Scheduled every {i_string}")
+
+@app.command()
+def done(name: Annotated[str, typer.Argument(help="The name of the habit.")]):
+    if not h.complete_habit(name):
+        raise typer.BadParameter(f"{name} does not exist!")
+    console.print(f"[green]Completed [magenta]{name}")
+    still_to_do = list(filter(lambda x: x.is_due(), h.show_todo()))
+    if not still_to_do:
+        s.increment()
 
 
 if __name__ == "__main__":
-    main()
+    app()

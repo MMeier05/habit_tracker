@@ -11,10 +11,6 @@ import time
 import streak
 import habit
 
-habit1 = habit.Habit("habit1", 2)
-habit1.complete()
-habit2 = habit.Habit("arbeit", 1)
-habits_list = [habit1, habit2]
 
 def make_cal_table(habits: list, columns=3) -> Table:
     my_date = date.today()
@@ -50,12 +46,12 @@ def make_cal_table(habits: list, columns=3) -> Table:
     return table
 
 def make_progress_bar(habits: list):
-    size = len(habits)
-    steps = len([habit for habit in habits if not habit.is_due()])
+    size = len(habits) 
+    steps = len([habit for habit in habits if not habit.is_due()]) 
     grid = Table.grid()
     grid.add_row(
         Bar(size, begin=0, end=steps, width=12, color="green", bgcolor="grey89"),
-        Text(f" {int((steps / size) * 100)}% ", style="green"),
+        Text(f" {int((steps / size) * 100)}% " if size > 0 else "", style="green"),
         Text(f"[{steps}/{size}]"),
     )
     return grid
@@ -65,10 +61,8 @@ class Dashboard:
         self.habits = habits
 
     def __rich__(self) -> Panel:
-        user_streak = streak.get_streak() 
+        user_streak = streak.get() 
         cur_date = date.today().strftime('%a, %d.%b')
-        
-
         panel = Panel(
             Align.left(
                 Group(
@@ -86,12 +80,13 @@ class Dashboard:
         return panel
 
 class Calendar:
-    def __init__(self, habits: list):
+    def __init__(self, habits: list, size=4):
         self.habits = habits
+        self.size = size
 
     def __rich__(self) -> Panel:
         panel = Panel(
-            make_cal_table(self.habits, 4),
+            make_cal_table(self.habits, self.size),
             title_align='left', 
             title="[green]$ [bold]calendar",
             expand=False,
@@ -99,12 +94,3 @@ class Calendar:
             border_style="yellow",
         )
         return panel
-
-console = Console()
-calendar = Calendar(habits_list)
-dashboard = Dashboard(habits_list)
-
-console.print(dashboard, calendar)
-
-
-

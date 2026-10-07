@@ -15,7 +15,6 @@ class Habit:
         return f"""
 Habit obj: {self.name}(
 freq: {self.frequency},
-tag: {self.tag},
 created: {self.created},
 last_completed: {self.last_completed})"""
 
@@ -31,7 +30,7 @@ last_completed: {self.last_completed})"""
 
     def complete(self):
         if not self.is_due():
-            raise Exception("Habit not overdue")
+            return
         else:
             self.last_completed = dt.date.today()
 
@@ -48,7 +47,7 @@ def remove(habit: str) -> bool:
     d.close()
     return False
 
-def rename(habit: str, new_name: str) -> Habit | None:
+def edit_name(habit: str, new_name: str) -> Habit | None:
     d = shelve.open("data")
     if habit in d:
         data = d[habit]
@@ -59,6 +58,28 @@ def rename(habit: str, new_name: str) -> Habit | None:
     d[new_name] = data
     d.close()
     return data
+
+def edit_schedule(habit: str, new_sched: int):
+    d = shelve.open("data")
+    if habit in d:
+        data = d[habit]
+    else:
+        return None
+    data.frequency = dt.timedelta(new_sched)
+    d[habit] = data
+    d.close()
+    return data
+
+def complete_habit(habit: str):
+    d = shelve.open("data")
+    if habit in d:
+        data = d[habit]
+    else:
+        return None
+    data.complete()
+    d[habit] = data
+    d.close()
+    return True
 
 def to_file(habit: Habit):
     d = shelve.open("data")
