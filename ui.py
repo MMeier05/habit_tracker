@@ -11,9 +11,8 @@ import time
 import streak
 import habit
 
-
 def make_cal_table(habits: list, columns=3) -> Table:
-    my_date = date.today()
+    my_date = date.today() 
     table_columns = []
     table_rows = []
 
@@ -28,13 +27,14 @@ def make_cal_table(habits: list, columns=3) -> Table:
     #create rows
     for habit in habits:
         row = []
+        #only for the first row
         if habit.last_completed == my_date:
             row.append(f"[green][✓]{habit.name}")
         else:
             row.append(f"[ ]{habit.name}")
-        for day in range(columns - 1):
-            calc_date = my_date + timedelta(day)
-            if calc_date.day % habit.frequency.days == 0:
+        #till here
+        for day in range(1, columns):
+            if day % habit.frequency.days == 0:
                 row.append(habit.name)
             else:
                 row.append("/")

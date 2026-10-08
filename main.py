@@ -38,8 +38,8 @@ def add(
     """
     Add new habits
     """
-
-    h.to_file(h.Habit(name, interval))
+    hab = h.Habit(name, interval)
+    h.to_file(hab)
     i_string = f"{interval} days" if interval > 1 else f"day"
     console.print(f"[green bold][magenta]{name}[/magenta] was added and gets scheduled every {i_string}!")
 
@@ -57,7 +57,7 @@ def rm(name: Annotated[str, typer.Argument(help="Name of the to be deleted habit
 def edit(
     habit_name: Annotated[str, typer.Argument(help="The name of the to be edited habit.")],
     name: Annotated[str, typer.Option(help="Edit the name.")] = None,
-    sched: Annotated[int, typer.Option(
+    schedule: Annotated[int, typer.Option(
         help="Edit the habits schedule.",
         callback=interval_callback,
     )] = None,
@@ -68,10 +68,10 @@ def edit(
             raise typer.BadParameter(f"{habit_name} does not exist!")
         console.print(f"[magenta]{habit_name} [green]-> [magenta]{name}")
         habit_name = name
-    if sched:
-        if not h.edit_schedule(habit_name, sched):
+    if schedule:
+        if not h.edit_schedule(habit_name, schedule):
             raise typer.BadParameter(f"{habit_name} does not exist!")
-        i_string = f"[magenta]{sched} [green]days" if sched > 1 else f"[green]day"
+        i_string = f"[magenta]{schedule} [green]days" if schedule > 1 else f"[green]day"
         console.print(f"[green]Scheduled every {i_string}")
 
 @app.command()
