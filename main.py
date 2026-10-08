@@ -19,6 +19,9 @@ def interval_callback(value: int):
 
 @app.command()
 def cal(size: Annotated[int, typer.Option(help="Size of the printed calendar.")] = 4) :
+    """
+    Prints the calendar
+    """
     console.print(Calendar(h_list, size))
 
 @app.callback(invoke_without_command=True)
@@ -62,6 +65,9 @@ def edit(
         callback=interval_callback,
     )] = None,
 ):
+    """
+    Edit existing habits
+    """
     console.print(f"[green][italic]Success[/italic]")
     if name:
         if not h.edit_name(habit_name, name):
@@ -76,6 +82,9 @@ def edit(
 
 @app.command()
 def done(name: Annotated[str, typer.Argument(help="The name of the habit.")]):
+    """
+    Complete habits
+    """
     if not h.complete_habit(name):
         raise typer.BadParameter(f"{name} does not exist!")
     console.print(f"[green]Completed [magenta]{name}")
