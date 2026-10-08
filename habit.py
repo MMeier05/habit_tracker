@@ -2,6 +2,11 @@ import time
 import shelve
 import datetime as dt
 import streak
+from pathlib import Path
+
+DATA_DIR = Path.home() /".habit_tracker"
+DATA_DIR.mkdir(exist_ok=True)
+DATA_PATH = str(DATA_DIR / "data")
 
 class Habit:
     def __init__(self, name, frequency):
@@ -39,7 +44,7 @@ last_completed: {self.last_completed})"""
 
 
 def remove(habit: str) -> bool:
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     if habit in d:
         del d[habit]
         d.close()
@@ -48,7 +53,7 @@ def remove(habit: str) -> bool:
     return False
 
 def edit_name(habit: str, new_name: str) -> Habit | None:
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     if habit in d:
         data = d[habit]
         del d[habit]
@@ -60,7 +65,7 @@ def edit_name(habit: str, new_name: str) -> Habit | None:
     return data
 
 def edit_schedule(habit: str, new_sched: int):
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     if habit in d:
         data = d[habit]
     else:
@@ -71,7 +76,7 @@ def edit_schedule(habit: str, new_sched: int):
     return data
 
 def complete_habit(habit: str):
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     if habit in d:
         data = d[habit]
     else:
@@ -82,12 +87,12 @@ def complete_habit(habit: str):
     return True
 
 def to_file(habit: Habit):
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     d[habit.name] = habit
     d.close()
 
 def retrieve_all() -> list[Habit]:
-    d = shelve.open("data")
+    d = shelve.open(DATA_PATH)
     data_list = [d[key] for key in list(d.keys())]
     d.close()
     return data_list
