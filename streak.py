@@ -25,10 +25,8 @@ def increment():
             yesterday = str(dt.date.today() - dt.timedelta(1))
             d[yesterday] = True
         if key not in d:
-            print("This should print")
             d[key] = True
             d["streak"] += 1
-            print("Now streak was inc")
         d.close()
 
 def reset():
