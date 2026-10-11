@@ -33,10 +33,13 @@ def reset():
     with shelve.open(STREAK_PATH) as d:
         if "streak" in d:
             d["streak"] = 0  
+        if str(dt.date.today()) in d:
+            d["streak"] = 1
 
 def check_for_reset():
     yesterday = str(dt.date.today() - dt.timedelta(1))
     with shelve.open(STREAK_PATH) as d:
         if yesterday not in d:
             reset()
+
 
